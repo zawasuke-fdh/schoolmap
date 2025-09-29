@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>福岡市 小学校区マップ</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  // --- Mapbox初期設定 ---
+  mapboxgl.accessToken = 'pk.eyJ1Ijoibm5wZGF0YSIsImEiOiJjbHBnbTV6cXIwd2p2MmlwYWxnYWg1bnh3In0.vDZxaboMvN72PFLaztqqnA';
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/light-v11',
+    center: [130.4017, 33.5902], // 福岡市中心付近
+    zoom: 11
+  });
+
+  // --- GeoJSONデータを追加 ---
+  map.on('load', () => {
+    map.addSource('fukuoka', {
+      type: 'geojson',
+      data: 'fukuoka.geojson' // ご自身のGeoJSONファイルのパス
+    });
+
+    // ポリゴン表示
+    map.addLayer({
+      id: 'fukuoka-fill',
+      type: 'fill',
+      source: 'fukuoka',
+      paint: {
+        'fill-color': '#3bb2d0',
+        'fill-opacity': 0.4
+      }
+    });
+
+    // 境界線
+    map.addLayer({
+      id: 'fukuoka-outline',
+      type: 'line',
+      source: 'fukuoka',
+      paint: {
+        'line-color': '#000',
+        'line-width': 1
+      }
+    });
+
+    // --- クリック時にポップアップを表示 ---
+    map.on('click', 'fukuoka-fill', (e) => {
+      const properties = e.features[0].properties;
+      const coordinates = e.lngLat;
+
+      // 例えば「小学校名」という属性があれば
+      const name = properties["校区名"] || "名称なし";
+
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(`<strong>${name}</strong>`)
+        .addTo(map);
+    });
+
+    // --- マウスオーバーでカーソルを変える ---
+    map.on('mouseenter', 'fukuoka-fill', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', 'fukuoka-fill', () => {
+      map.getCanvas().style.cursor = '';
+    });
+  });
+</script>
+</body>
+</html>
