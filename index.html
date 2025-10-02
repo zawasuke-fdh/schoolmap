@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>福岡市 小学校区マップ（開発中）</title>
+  <title>福岡市＋周辺市町村 小学校区マップ</title>
   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
@@ -14,65 +14,98 @@
 <body>
 <div id="map"></div>
 <script>
-  // --- Mapbox初期設定 ---
   mapboxgl.accessToken = 'pk.eyJ1Ijoibm5wZGF0YSIsImEiOiJjbHBnbTV6cXIwd2p2MmlwYWxnYWg1bnh3In0.vDZxaboMvN72PFLaztqqnA';
+
   const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v11',
-    center: [130.4017, 33.5902], // 福岡市中心付近
+    center: [130.4017, 33.5902], // 福岡市付近
     zoom: 11
   });
 
-  // --- GeoJSONデータを追加 ---
   map.on('load', () => {
+    // --- 福岡市の校区 ---
     map.addSource('fukuoka', {
       type: 'geojson',
-      data: 'fukuoka.geojson' // ご自身のGeoJSONファイルのパス
+      data: 'fukuoka.geojson'
     });
 
-    // ポリゴン表示
+  // ポリゴン（透明にする）
     map.addLayer({
       id: 'fukuoka-fill',
       type: 'fill',
       source: 'fukuoka',
       paint: {
-        'fill-color': '#3bb2d0',
-        'fill-opacity': 0.4
+        'fill-color': '#000000',   // 一応色指定は必要
+        'fill-opacity': 0          // 完全に透明
       }
     });
 
-    // 境界線
+    // 校区境界線（例：青系）
     map.addLayer({
       id: 'fukuoka-outline',
       type: 'line',
       source: 'fukuoka',
       paint: {
-        'line-color': '#000',
-        'line-width': 1
+        'line-color': '#1d70b8',   // 青系（見やすい）
+        'line-width': 1.5
       }
     });
 
-    // --- クリック時にポップアップを表示 ---
+    // --- 福岡県その他の校区 ---
+    map.addSource('other', {
+      type: 'geojson',
+      data: 'fukpref.geojson'
+    });
+
+    // ポリゴン（透明にする）
+    map.addLayer({
+      id: 'other-fill',
+      type: 'fill',
+      source: 'other',
+      paint: {
+        'fill-color': '#000000',   // 一応色指定は必要
+        'fill-opacity': 0          // 完全に透明
+      }
+    });
+
+    // 校区境界線（例：青系）
+    map.addLayer({
+      id: 'other-outline',
+      type: 'line',
+      source: 'other',
+      paint: {
+        'line-color': '#1d70b8',   // 青系（見やすい）
+        'line-width': 1.5
+      }
+    });
+
+    // --- 福岡市ポップアップ ---
     map.on('click', 'fukuoka-fill', (e) => {
-      const properties = e.features[0].properties;
-      const coordinates = e.lngLat;
-
-      // 例えば「小学校名」という属性があれば
-      const name = properties["校区名"] || "名称なし";
-
+      const props = e.features[0].properties;
       new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>${name}</strong>`)
+        .setLngLat(e.lngLat)
+        .setHTML(`<b>校区名:</b> ${props['校区名']}`)
         .addTo(map);
     });
 
-    // --- マウスオーバーでカーソルを変える ---
-    map.on('mouseenter', 'fukuoka-fill', () => {
-      map.getCanvas().style.cursor = 'pointer';
+    // --- その他市町村ポップアップ ---
+    map.on('click', 'other-fill', (e) => {
+      const props = e.features[0].properties;
+      new mapboxgl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(`
+          <b>市町村:</b> ${props.A27_002}<br>
+          <b>小学校名:</b> ${props.A27_004}
+        `)
+        .addTo(map);
     });
-    map.on('mouseleave', 'fukuoka-fill', () => {
-      map.getCanvas().style.cursor = '';
-    });
+
+    // --- カーソル表示 ---
+    map.on('mouseenter', 'fukuoka-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'fukuoka-fill', () => { map.getCanvas().style.cursor = ''; });
+    map.on('mouseenter', 'other-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'other-fill', () => { map.getCanvas().style.cursor = ''; });
   });
 </script>
 </body>
